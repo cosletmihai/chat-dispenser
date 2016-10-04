@@ -21,10 +21,11 @@ class SocketCreation:
 
     def create_reading_socket(self, ip=None, port=None):
         sock = self._create_udp_socket()
-        ip = ip if ip else get_local_ip()
-        port = port if port else MESSAGE_PORT
-        print(ip, port)
+        print(ip == '')
+        ip = ip if ip or ip == '' else get_local_ip()
+        port = port if port else 0
         sock.bind((ip, port))
+        print(sock.getsockname()[1])
         return sock
 
     def create_writing_socket(self):
@@ -33,11 +34,11 @@ class SocketCreation:
 
 
 class Connection(SocketCreation):
-    def __init__(self, read=True):
+    def __init__(self, read=True, ip=None, port=None):
         self.port = MESSAGE_PORT
         self.read = read
         if read:
-            self.sock = self.create_reading_socket()
+            self.sock = self.create_reading_socket(ip, port)
         else:
             self.sock = self.create_writing_socket()
 
@@ -49,7 +50,7 @@ class Connection(SocketCreation):
         else:
             warnings.warn('this socket if for listening only')
 
-    def send_message(self, ip, message, port=None):
+    def send_message(self, message, ip, port=None):
         if not self.read:
             port = port if port else self.port
             self.sock.sendto(message.encode('utf-8'), (ip, port))
@@ -58,6 +59,10 @@ class Connection(SocketCreation):
 
     def receive_message(self):
         if self.read:
-            return self.sock.recvfrom(1000)
+            message, addr = self.sock.recvfrom(1000)
+            return message.decode('utf-8')
         else:
             warnings.warn('this socket if for writing only')
+
+    def get_reading_port(self):
+        return self.sock.getsockname()[1]
