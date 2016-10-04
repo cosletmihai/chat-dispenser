@@ -1,7 +1,8 @@
 import selectors
+from threading import Thread
 
 from connection import Connection
-from utils import BROADCAST_PORT, MESSAGE_PORT
+from utils import BROADCAST_PORT
 
 
 class Broker:
@@ -20,8 +21,20 @@ class Broker:
 
 
 
+
 br = Broker()
+
+
+def amazing_func():
+    while True:
+        events = br.selector.select()
+        for key, mask in events:
+            key.data(key.fileobj)
+
+worker = Thread(target=amazing_func)
+# It will kill the thread when the program exits
+worker.setDaemon(True)
+worker.start()
+
 while True:
-    events = br.selector.select()
-    for key, mask in events:
-        key.data(key.fileobj)
+    print(input())
