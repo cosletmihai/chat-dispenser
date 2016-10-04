@@ -7,7 +7,7 @@ from utils import get_local_ip
 
 
 class SocketCreation:
-    def _create_udp_socket(self, port=MESSAGE_PORT, is_blocking=True):
+    def _create_udp_socket(self, is_blocking=True):
         """
         Returns a listening socket
         :param is_blocking:
@@ -21,11 +21,9 @@ class SocketCreation:
 
     def create_reading_socket(self, ip=None, port=None):
         sock = self._create_udp_socket()
-        print(ip == '')
         ip = ip if ip or ip == '' else get_local_ip()
         port = port if port else 0
         sock.bind((ip, port))
-        print(sock.getsockname()[1])
         return sock
 
     def create_writing_socket(self):
@@ -45,7 +43,7 @@ class Connection(SocketCreation):
     def broadcast_message(self, message, port=BROADCAST_PORT):
         if not self.read:
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            self.sock.sendto(message.encode('utf-8'), ('<broadcast>', port))
+            self.sock.sendto(self._encode(message), ('<broadcast>', port))
             self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
         else:
             warnings.warn('this socket if for listening only')
@@ -54,16 +52,26 @@ class Connection(SocketCreation):
         if not self.read:
             port = port if port else self.port
             print(ip, port)
-            self.sock.sendto(message.encode('utf-8'), (ip, port))
+            self.sock.sendto(self._encode(message), (ip, port))
         else:
             warnings.warn('this socket if for listening only')
 
     def receive_message(self):
         if self.read:
             message, addr = self.sock.recvfrom(1000)
-            return message.decode('utf-8'), addr
+            return self._decode(message), addr
         else:
             warnings.warn('this socket if for writing only')
 
-    def get_reading_port(self):
+    def get_port(self):
         return self.sock.getsockname()[1]
+
+    def _encode(self, message):
+        if not isinstance(message, bytes):
+            return message.encode('utf-8')
+        return message
+
+    def _decode(self, message):
+        if isinstance(message, bytes):
+            return message.decode('utf-8')
+        return message

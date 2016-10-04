@@ -17,7 +17,7 @@ class SenderReceiver():
         print(message)
 
     def send_login_message(self):
-        self.writing_connection.broadcast_message(input('name: ') +  str(self.reading_connection.get_reading_port()))
+        self.writing_connection.broadcast_message(input('name: ') + str(self.reading_connection.get_port()))
         broker_message, addr = self.reading_connection.receive_message()
         self.broker_addr = addr
         return broker_message
