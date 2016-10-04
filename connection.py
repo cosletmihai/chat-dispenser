@@ -51,7 +51,6 @@ class Connection(SocketCreation):
     def send_message(self, message, ip, port=None):
         if not self.read:
             port = port if port else self.port
-            print(ip, port)
             self.socket.sendto(self._encode(message), (ip, port))
         else:
             warnings.warn('this socket if for listening only')

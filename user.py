@@ -17,9 +17,7 @@ class SenderReceiver():
 
         self.selector = selectors.DefaultSelector()
         self.selector.register(self.reading_connection.socket, selectors.EVENT_READ, self.reading_sel)
-
-        message = self.send_login_message()
-        print(message)
+        self.send_login_message()
 
     def send_login_message(self):
         name = ''
@@ -40,10 +38,13 @@ class SenderReceiver():
 
         broker_message, addr = self.reading_connection.receive_message()
         received_message = MessageBuilder.make_readable(broker_message)
-        print(received_message.get(MessageFields.MESSAGE_ID),
-              received_message.get(MessageFields.MESSAGE_CONTENT))
+
+        message_type = received_message.get(MessageFields.MESSAGE_ID)
+        message_content = received_message.get(MessageFields.MESSAGE_CONTENT)
+        online_users = message_content.get(MessageFields.USER_LIST)
+        print('online users: {}'.format(str(online_users)))
+
         self.broker_address = addr
-        return broker_message
 
     def reading_sel(self):
         data, _ = self.reading_connection.receive_message()
@@ -77,7 +78,6 @@ worker.setDaemon(True)
 worker.start()
 
 while True:
-    print(sr.broker_address)
     text_input = input()
     username, text = text_input.split(' ', 1)
 
