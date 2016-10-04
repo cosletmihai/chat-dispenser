@@ -36,15 +36,15 @@ class Connection(SocketCreation):
         self.port = MESSAGE_PORT
         self.read = read
         if read:
-            self.sock = self.create_reading_socket(ip, port)
+            self.socket = self.create_reading_socket(ip, port)
         else:
-            self.sock = self.create_writing_socket()
+            self.socket = self.create_writing_socket()
 
     def broadcast_message(self, message, port=BROADCAST_PORT):
         if not self.read:
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-            self.sock.sendto(self._encode(message), ('<broadcast>', port))
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            self.socket.sendto(self._encode(message), ('<broadcast>', port))
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 0)
         else:
             warnings.warn('this socket if for listening only')
 
@@ -52,19 +52,19 @@ class Connection(SocketCreation):
         if not self.read:
             port = port if port else self.port
             print(ip, port)
-            self.sock.sendto(self._encode(message), (ip, port))
+            self.socket.sendto(self._encode(message), (ip, port))
         else:
             warnings.warn('this socket if for listening only')
 
     def receive_message(self):
         if self.read:
-            message, addr = self.sock.recvfrom(1000)
+            message, addr = self.socket.recvfrom(1000)
             return self._decode(message), addr
         else:
             warnings.warn('this socket if for writing only')
 
     def get_port(self):
-        return self.sock.getsockname()[1]
+        return self.socket.getsockname()[1]
 
     def _encode(self, message):
         if not isinstance(message, bytes):

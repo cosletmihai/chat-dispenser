@@ -1,5 +1,5 @@
 import socket
-from json import dumps
+from json import dumps, loads
 
 
 def get_local_ip():
@@ -10,22 +10,31 @@ MESSAGE_PORT = 10000
 BROADCAST_PORT = 10001
 
 
-class MessageField:
+class MessageFields:
+    BROKER_ADDRESS = 'broker_address'
+    MESSAGE_CONTENT = 'message_content'
     MESSAGE_ID = 'message_id'
+    MESSAGE_TEXT = 'message_text'
+    SENDER_PORT = 'sender_port'
     SENDER_USERNAME = 'sender_username'
     RECEIVER_USERNAME = 'receiver_username'
-    MESSAGE_CONTENT = 'message_content'
-    USER_SET = 'ids_set'
+    USER_LIST = 'user_list'
 
 
-class MessageID:
-    LOG_IN = 'log_in'
+class MessageId:
     ACKNOWLEDGE_LOG_IN = 'acknowledge_log_in'
-    UPDATE_USER_SET = 'update_user_set'
+    LOG_IN = 'log_in'
     LOG_OUT = 'acknowledge_log_out'
+    SEND_MESSAGE = 'send_message'
+    RECEIVE_MESSAGE = 'receive_message'
+    UPDATE_USER_SET = 'update_user_set'
 
 
 class MessageBuilder:
-    def make_sendable(self, message):
-        json_to_send = dumps(message)
-        return json_to_send.encode('utf-8')
+    @classmethod
+    def make_sendable(cls, message):
+        return dumps(message)
+
+    @classmethod
+    def make_readable(cls, json_message):
+        return loads(json_message)
