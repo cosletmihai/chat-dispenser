@@ -53,6 +53,7 @@ class Connection(SocketCreation):
     def send_message(self, message, ip, port=None):
         if not self.read:
             port = port if port else self.port
+            print(ip, port)
             self.sock.sendto(message.encode('utf-8'), (ip, port))
         else:
             warnings.warn('this socket if for listening only')
@@ -60,7 +61,7 @@ class Connection(SocketCreation):
     def receive_message(self):
         if self.read:
             message, addr = self.sock.recvfrom(1000)
-            return message.decode('utf-8')
+            return message.decode('utf-8'), addr
         else:
             warnings.warn('this socket if for writing only')
 
