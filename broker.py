@@ -83,19 +83,24 @@ class Broker:
                                     ip,
                                     port)
 
+    def selector_function(self):
+        while True:
+            events = self.selector.select()
+            for key, mask in events:
+                key.data()
 
-br = Broker()
 
-def amazing_func():
+def main():
+    broker = Broker()
+
+    worker = Thread(target=broker.selector_function)
+    # It will kill the thread when the program exits
+    worker.setDaemon(True)
+    worker.start()
+
     while True:
-        events = br.selector.select()
-        for key, mask in events:
-            key.data()
+        pass
 
-worker = Thread(target=amazing_func)
-# It will kill the thread when the program exits
-worker.setDaemon(True)
-worker.start()
 
-while True:
-    pass
+if __name__ == '__main__':
+    main()

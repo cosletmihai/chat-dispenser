@@ -63,31 +63,40 @@ class SenderReceiver():
         to_print = '"{}" from \x1B[3m{}\x1B[23m'.format(text, from_username)
         print(to_print)
 
+    def send_message(self):
+        text_input = input()
+        username, text = text_input.split(' ', 1)
 
-sr = SenderReceiver()
-
-def amazing_func():
-    while True:
-        events = sr.selector.select()
-        for key, mask in events:
-            key.data()
-
-worker = Thread(target=amazing_func)
-# It will kill the thread when the program exits
-worker.setDaemon(True)
-worker.start()
-
-while True:
-    text_input = input()
-    username, text = text_input.split(' ', 1)
-
-    message = {
-        MessageFields.MESSAGE_ID: MessageId.SEND_MESSAGE,
-        MessageFields.MESSAGE_CONTENT: {
-            MessageFields.SENDER_USERNAME: sr.username,
-            MessageFields.RECEIVER_USERNAME: username,
-            MessageFields.MESSAGE_TEXT: text,
+        message = {
+            MessageFields.MESSAGE_ID: MessageId.SEND_MESSAGE,
+            MessageFields.MESSAGE_CONTENT: {
+                MessageFields.SENDER_USERNAME: self.username,
+                MessageFields.RECEIVER_USERNAME: username,
+                MessageFields.MESSAGE_TEXT: text,
+            }
         }
-    }
-    message_to_send = MessageBuilder.make_sendable(message)
-    sr.writing_connection.send_message(message_to_send, sr.broker_address[0])
+        message_to_send = MessageBuilder.make_sendable(message)
+        self.writing_connection.send_message(message_to_send, self.broker_address[0])
+
+    def selector_function(self):
+        while True:
+            events = self.selector.select()
+            for key, mask in events:
+                key.data()
+
+
+
+def main():
+    user = SenderReceiver()
+
+    worker = Thread(target=user.selector_function)
+    # It will kill the thread when the program exits
+    worker.setDaemon(True)
+    worker.start()
+
+    while True:
+        user.send_message()
+
+
+if __name__ == '__main__':
+    main()
