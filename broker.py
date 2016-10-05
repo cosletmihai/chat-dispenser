@@ -3,7 +3,7 @@ import warnings
 from threading import Thread
 
 from connection import Connection
-from utils import BROADCAST_PORT, MESSAGE_PORT, MessageBuilder, MessageFields, MessageId
+from utils import BROADCAST_PORT, MESSAGE_PORT, MessageBuilder, MessageFields, MessageId, DebugMessage
 
 
 class Broker:
@@ -25,6 +25,7 @@ class Broker:
     def _process_login(self):
         data, addr = self.broadcasting_connection.receive_message()
         message = MessageBuilder.make_readable(data)
+        DebugMessage.debug(message, addr)
 
         ip = addr[0]
         message_content = message.get(MessageFields.MESSAGE_CONTENT, {})
@@ -42,8 +43,9 @@ class Broker:
         self.writing_connection.send_message(message_to_send, ip, port)
 
     def _process_receive(self):
-        data, _  = self.reading_connection.receive_message()
+        data, addr  = self.reading_connection.receive_message()
         message = MessageBuilder.make_readable(data)
+        DebugMessage.debug(message, addr)
 
         message_type = message.get(MessageFields.MESSAGE_ID)
         message_content = message.get(MessageFields.MESSAGE_CONTENT, {})

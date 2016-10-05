@@ -1,5 +1,4 @@
 import selectors
-import warnings
 from threading import Thread
 
 from connection import Connection
@@ -61,7 +60,8 @@ class SenderReceiver():
     def receive_message(self, message_content):
         from_username = message_content.get(MessageFields.SENDER_USERNAME)
         text = message_content.get(MessageFields.MESSAGE_TEXT)
-        print('"{}" from \x1B[3m{}\x1B[3m'.format(text, from_username))
+        to_print = '"{}" from \x1B[3m{}\x1B[23m'.format(text, from_username)
+        print(to_print)
 
 
 sr = SenderReceiver()

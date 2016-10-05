@@ -30,6 +30,16 @@ class MessageId:
     UPDATE_USER_SET = 'update_user_set'
 
 
+class DebugMessage:
+    @classmethod
+    def debug(cls, message, addr=None):
+        if addr:
+            print("from", addr)
+        print(MessageFields.MESSAGE_ID, message.get(MessageFields.MESSAGE_ID))
+        print(MessageFields.MESSAGE_CONTENT, message.get(MessageFields.MESSAGE_CONTENT))
+        print()
+
+
 class MessageBuilder:
     @classmethod
     def make_sendable(cls, message):
