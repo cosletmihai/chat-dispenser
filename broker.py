@@ -71,6 +71,29 @@ class Broker:
         else:
             warnings.warn('no such user exists')
 
+    def get_online_users(self, message_content):
+        address = self._get_user_address(message_content.get(MessageFields.SENDER_USERNAME))
+
+        if address:
+            message = {
+                MessageFields.MESSAGE_ID: MessageId.ONLINE_USERS,
+                MessageFields.MESSAGE_CONTENT: {
+                    MessageFields.USER_LIST: list(self.online_user_list.keys())
+                }
+            }
+            message_to_send = MessageBuilder.make_sendable(message)
+            self.writing_connection.send_message(message_to_send, address[0], address[1])
+        else:
+            warnings.warn('no such user exists')
+
+    def log_out(self, message_content):
+        user_to_remove = message_content.get(MessageFields.SENDER_USERNAME)
+        if user_to_remove:
+            self.online_user_list.pop(user_to_remove, None)
+            print("Removed: {}".format(user_to_remove))
+        else:
+            warnings.warn('no such user exists')
+
     def _get_user_address(self, username):
         return self.online_user_list.get(username)
 

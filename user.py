@@ -15,7 +15,9 @@ class SenderReceiver():
         self.reading_connection = Connection(read=True)
 
         self.selector = selectors.DefaultSelector()
-        self.selector.register(self.reading_connection.socket, selectors.EVENT_READ, self.reading_sel)
+        self.selector.register(self.reading_connection.socket,
+                               selectors.EVENT_READ,
+                               self.reading_sel)
         self.send_login_message()
 
     def send_login_message(self):
@@ -38,7 +40,7 @@ class SenderReceiver():
         broker_message, addr = self.reading_connection.receive_message()
         received_message = MessageBuilder.make_readable(broker_message)
 
-        message_type = received_message.get(MessageFields.MESSAGE_ID)
+        received_message.get(MessageFields.MESSAGE_ID)
         message_content = received_message.get(MessageFields.MESSAGE_CONTENT)
         online_users = message_content.get(MessageFields.USER_LIST)
         print('online users: {}'.format(str(online_users)))
@@ -57,6 +59,9 @@ class SenderReceiver():
         except AttributeError:
             pass
 
+    def online_users(self, message_content):
+        print("Online users: {}".format(message_content.get(MessageFields.USER_LIST)))
+
     def receive_message(self, message_content):
         from_username = message_content.get(MessageFields.SENDER_USERNAME)
         text = message_content.get(MessageFields.MESSAGE_TEXT)
@@ -65,18 +70,42 @@ class SenderReceiver():
 
     def send_message(self):
         text_input = input()
-        username, text = text_input.split(' ', 1)
+        username = ''
+        text = ''
+        message_id = ''
 
-        message = {
-            MessageFields.MESSAGE_ID: MessageId.SEND_MESSAGE,
-            MessageFields.MESSAGE_CONTENT: {
-                MessageFields.SENDER_USERNAME: self.username,
-                MessageFields.RECEIVER_USERNAME: username,
-                MessageFields.MESSAGE_TEXT: text,
-            }
+        commands = {
+            'online-users': MessageId.GET_ONLINE_USERS,
+            'exit': MessageId.LOG_OUT
         }
-        message_to_send = MessageBuilder.make_sendable(message)
-        self.writing_connection.send_message(message_to_send, self.broker_address[0])
+
+        try:
+            username, text = text_input.split(' ', 1)
+        except ValueError:
+            message_id = commands.get(text_input.strip(), None)
+
+
+        if username is not '':
+            message = {
+                MessageFields.MESSAGE_ID: MessageId.SEND_MESSAGE,
+                MessageFields.MESSAGE_CONTENT: {
+                    MessageFields.SENDER_USERNAME: self.username,
+                    MessageFields.RECEIVER_USERNAME: username,
+                    MessageFields.MESSAGE_TEXT: text
+                }
+            }
+            self._send_message(message)
+
+        elif message_id is not None:
+            message = {
+                MessageFields.MESSAGE_ID: message_id,
+                MessageFields.MESSAGE_CONTENT: {
+                    MessageFields.SENDER_USERNAME: self.username
+                }
+            }
+            self._send_message(message)
+        else:
+            print('no such command')
 
     def selector_function(self):
         while True:
@@ -84,7 +113,9 @@ class SenderReceiver():
             for key, mask in events:
                 key.data()
 
-
+    def _send_message(self, message):
+        message_to_send = MessageBuilder.make_sendable(message)
+        self.writing_connection.send_message(message_to_send, self.broker_address[0])
 
 def main():
     user = SenderReceiver()
