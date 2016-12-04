@@ -1,4 +1,5 @@
 import socket
+from collections import namedtuple
 from json import dumps, loads
 
 
@@ -8,6 +9,9 @@ def get_local_ip():
 
 MESSAGE_PORT = 10000
 BROADCAST_PORT = 10001
+
+
+User = namedtuple('user', ['ip', 'port', 'is_online'])
 
 
 class MessageFields:
