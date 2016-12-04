@@ -22,8 +22,8 @@ class Broker:
                                self._process_receive)
 
         self.users_dict = dict()
+        self.unsent_messages = defaultdict(list)
         self.groups = defaultdict(set)
-        self.message_count = 0
 
     def _process_login(self):
         data, addr = self.broadcasting_connection.receive_message()
@@ -35,8 +35,7 @@ class Broker:
         username = message_content.get(MessageFields.SENDER_USERNAME)
         port = message_content.get(MessageFields.SENDER_PORT)
         self._add_new_user(username, ip, port)
-
-        online_users = self.get_online_list()
+        online_users = self.get_list()
         message = {
             MessageFields.MESSAGE_ID: MessageId.ACKNOWLEDGE_LOG_IN,
             MessageFields.MESSAGE_CONTENT: {
@@ -45,6 +44,24 @@ class Broker:
         }
         message_to_send = MessageBuilder.make_sendable(message)
         self.writing_connection.send_message(message_to_send, ip, port)
+
+        self._send_missed_messages(username)
+
+
+    def _send_missed_messages(self, username):
+        missed_messages = self.unsent_messages.pop(username, [])
+        user = self._get_user_info(username)
+
+        for missed_message in missed_messages:
+            message = {
+                MessageFields.MESSAGE_ID: MessageId.RECEIVE_MESSAGE,
+                MessageFields.MESSAGE_CONTENT: {
+                    MessageFields.SENDER_USERNAME: missed_message.get(MessageFields.SENDER_USERNAME),
+                    MessageFields.MESSAGE_TEXT: missed_message.get(MessageFields.MESSAGE_TEXT),
+                }
+            }
+            message_to_send = MessageBuilder.make_sendable(message)
+            self.writing_connection.send_message(message_to_send, user.ip, user.port)
 
     def _process_receive(self):
         data, addr  = self.reading_connection.receive_message()
@@ -63,16 +80,34 @@ class Broker:
     def send_message(self, message_content):
         user = self._get_user_info(message_content.get(MessageFields.RECEIVER_USERNAME))
         if user:
-            message = {
-                MessageFields.MESSAGE_ID: MessageId.RECEIVE_MESSAGE,
-                MessageFields.MESSAGE_CONTENT: {
-                    MessageFields.SENDER_USERNAME: message_content.get(MessageFields.SENDER_USERNAME),
-                    MessageFields.MESSAGE_TEXT: message_content.get(MessageFields.MESSAGE_TEXT),
+            if user.is_online:
+                message = {
+                    MessageFields.MESSAGE_ID: MessageId.RECEIVE_MESSAGE,
+                    MessageFields.MESSAGE_CONTENT: {
+                        MessageFields.SENDER_USERNAME: message_content.get(MessageFields.SENDER_USERNAME),
+                        MessageFields.MESSAGE_TEXT: message_content.get(MessageFields.MESSAGE_TEXT),
+                    }
                 }
-            }
-            message_to_send = MessageBuilder.make_sendable(message)
-            self.writing_connection.send_message(message_to_send, user.ip, user.port)
+                message_to_send = MessageBuilder.make_sendable(message)
+                self.writing_connection.send_message(message_to_send, user.ip, user.port)
+            else:
+                text = '{} is offline. The user will receive the message when the user comes online'.format(message_content.get(MessageFields.RECEIVER_USERNAME))
+                message = {
+                    MessageFields.MESSAGE_ID: MessageId.RECEIVE_MESSAGE,
+                    MessageFields.MESSAGE_CONTENT: {
+                        MessageFields.SENDER_USERNAME: 'broker',
+                        MessageFields.MESSAGE_TEXT: text
+                    }
+                }
+                message_to_send = MessageBuilder.make_sendable(message)
+                sender = self._get_user_info(message_content.get(MessageFields.SENDER_USERNAME))
+                self.writing_connection.send_message(message_to_send, sender.ip, sender.port)
 
+                self.unsent_messages[message_content.get(MessageFields.RECEIVER_USERNAME)].append({
+                    MessageFields.SENDER_USERNAME: message_content.get(MessageFields.SENDER_USERNAME),
+                    MessageFields.MESSAGE_TEXT: message_content.get(MessageFields.MESSAGE_TEXT)
+                })
+                print(self.unsent_messages)
         else:
             warnings.warn('no such user exists')
 
@@ -134,12 +169,12 @@ class Broker:
             message_to_send = MessageBuilder.make_sendable(message)
             self.writing_connection.send_message(message_to_send, user.ip, user.port)
 
-    def get_online_list(self):
-        return [user for user in self.users_dict if self.users_dict[user].is_online]
+    def get_list(self):
+        return ['{}, online: {}'.format(user, self.users_dict[user].is_online) for user in self.users_dict]
 
     def get_online_users(self, message_content):
         address = self._get_user_info(message_content.get(MessageFields.SENDER_USERNAME))
-        online_users = self.get_online_list()
+        online_users = self.get_list()
         if address:
             message = {
                 MessageFields.MESSAGE_ID: MessageId.ONLINE_USERS,
