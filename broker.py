@@ -110,19 +110,32 @@ class Broker:
         sender = message_content.get(MessageFields.SENDER_USERNAME)
         text = message_content.get(MessageFields.MESSAGE_TEXT)
 
-        for group_member in self.groups[group_name]:
-            if group_member != sender:
-                address = self._get_user_address(group_member)
-                message = {
-                    MessageFields.MESSAGE_ID: MessageId.GROUP_MESSAGE,
-                    MessageFields.MESSAGE_CONTENT: {
-                        MessageFields.SENDER_USERNAME: sender,
-                        MessageFields.MESSAGE_TEXT: text,
-                        MessageFields.GROUP_NAME: group_name
+        if group_name in self.groups:
+            for group_member in self.groups[group_name]:
+                if group_member != sender:
+                    address = self._get_user_address(group_member)
+                    message = {
+                        MessageFields.MESSAGE_ID: MessageId.GROUP_MESSAGE,
+                        MessageFields.MESSAGE_CONTENT: {
+                            MessageFields.SENDER_USERNAME: sender,
+                            MessageFields.MESSAGE_TEXT: text,
+                            MessageFields.GROUP_NAME: group_name
+                        }
                     }
+                    message_to_send = MessageBuilder.make_sendable(message)
+                    self.writing_connection.send_message(message_to_send, address[0], address[1])
+        else:
+            address = self._get_user_address(sender)
+            message = {
+                MessageFields.MESSAGE_ID: MessageId.RECEIVE_MESSAGE,
+                MessageFields.MESSAGE_CONTENT: {
+                    MessageFields.SENDER_USERNAME: 'broker',
+                    MessageFields.MESSAGE_TEXT: 'no such group'
                 }
-                message_to_send = MessageBuilder.make_sendable(message)
-                self.writing_connection.send_message(message_to_send, address[0], address[1])
+            }
+            message_to_send = MessageBuilder.make_sendable(message)
+            self.writing_connection.send_message(message_to_send, address[0], address[1])
+
 
 
     def get_online_users(self, message_content):
