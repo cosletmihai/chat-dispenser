@@ -19,18 +19,24 @@ class MessageFields:
     SENDER_USERNAME = 'sender_username'
     RECEIVER_USERNAME = 'receiver_username'
     USER_LIST = 'user_list'
+    GROUP_NAME = 'group_name'
+    GROUP_MEMBERS = 'group_members'
 
 
 class MessageId:
     ACKNOWLEDGE_LOG_IN = 'acknowledge_log_in'
     LOG_IN = 'log_in'
-    LOG_OUT = 'log_out'
     ACK_LOG_OUT = 'acknowledge_log_out'
     SEND_MESSAGE = 'send_message'
     RECEIVE_MESSAGE = 'receive_message'
-    GET_ONLINE_USERS = 'get_online_users'
     ONLINE_USERS = 'online_users'
     UPDATE_USER_SET = 'update_user_set'
+
+    # Commands
+    GET_ONLINE_USERS = 'get_online_users'
+    CREATE_GROUP = 'create_group'
+    GROUP_MESSAGE = 'group_message'
+    LOG_OUT = 'log_out'
 
 
 class DebugMessage:

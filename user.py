@@ -68,32 +68,61 @@ class SenderReceiver():
         to_print = '"{}" from \x1B[3m{}\x1B[23m'.format(text, from_username)
         print(to_print)
 
+    def group_message(self, message_content):
+        from_username = message_content.get(MessageFields.SENDER_USERNAME)
+        text = message_content.get(MessageFields.MESSAGE_TEXT)
+        group_name = message_content.get(MessageFields.GROUP_NAME)
+        to_print = '"{}" from \x1B[3m{}\x1B[23m, in {}'.format(text, from_username, group_name)
+        print(to_print)
+
     def send_message(self):
         text_input = input()
-        username = ''
+        command_or_user = ''
         text = ''
         message_id = ''
 
         commands = {
+            'create-group': MessageId.CREATE_GROUP,
             'online-users': MessageId.GET_ONLINE_USERS,
             'exit': MessageId.LOG_OUT
         }
 
         try:
-            username, text = text_input.split(' ', 1)
+            command_or_user, text = text_input.split(' ', 1)
         except ValueError:
             message_id = commands.get(text_input.strip(), None)
 
 
-        if username is not '':
-            message = {
-                MessageFields.MESSAGE_ID: MessageId.SEND_MESSAGE,
-                MessageFields.MESSAGE_CONTENT: {
-                    MessageFields.SENDER_USERNAME: self.username,
-                    MessageFields.RECEIVER_USERNAME: username,
-                    MessageFields.MESSAGE_TEXT: text
+        if command_or_user is not '':
+            if command_or_user.strip() == 'create-group':
+                group_name, group_members = text.split(' ', 1)
+                message = {
+                    MessageFields.MESSAGE_ID: MessageId.CREATE_GROUP,
+                    MessageFields.MESSAGE_CONTENT: {
+                        MessageFields.SENDER_USERNAME: self.username,
+                        MessageFields.GROUP_NAME: group_name,
+                        MessageFields.GROUP_MEMBERS: group_members.split()
+                    }
                 }
-            }
+            elif command_or_user.strip() == 'group':
+                group_name, text = text.split(' ', 1)
+                message = {
+                    MessageFields.MESSAGE_ID: MessageId.GROUP_MESSAGE,
+                    MessageFields.MESSAGE_CONTENT: {
+                        MessageFields.SENDER_USERNAME: self.username,
+                        MessageFields.GROUP_NAME: group_name,
+                        MessageFields.MESSAGE_TEXT: text
+                    }
+                }
+            else:
+                message = {
+                    MessageFields.MESSAGE_ID: MessageId.SEND_MESSAGE,
+                    MessageFields.MESSAGE_CONTENT: {
+                        MessageFields.SENDER_USERNAME: self.username,
+                        MessageFields.RECEIVER_USERNAME: command_or_user.strip(),
+                        MessageFields.MESSAGE_TEXT: text
+                    }
+                }
             self._send_message(message)
 
         elif message_id is not None:
