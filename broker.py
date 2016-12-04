@@ -170,7 +170,10 @@ class Broker:
             self.writing_connection.send_message(message_to_send, user.ip, user.port)
 
     def get_list(self):
-        return ['{}, online: {}'.format(user, self.users_dict[user].is_online) for user in self.users_dict]
+        # return ['{}, online: {}'.format(user, self.users_dict[user].is_online) for user in self.users_dict]
+        users_list = list()
+        for user in self.users_dict:
+            users_list.append('{}, online: {}'.format(user, self.users_dict[user].is_online))
 
     def get_online_users(self, message_content):
         address = self._get_user_info(message_content.get(MessageFields.SENDER_USERNAME))
